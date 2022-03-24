@@ -12,7 +12,7 @@ const NOTE_NAMES: &[&str] = &["C","C#","D","D#","E",
 const NOTES_PER_OCTAVE: u32 = 12;
 const MIDDLE_C: u32 = 60;
 // A440
-const BASE_NOTE: f32 = 57.0;
+const BASE_NOTE: f32 = 69.0;
 const BASE_FREQ: f32 = 440.0;
 
 #[derive(Parser,Debug)]
