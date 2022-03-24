@@ -10,7 +10,7 @@ use regex::Regex;
 const NOTE_NAMES: &[&str] = &["C","C#","D","D#","E",
                               "F","F#","G","G#","A","A#","B"];
 const NOTES_PER_OCTAVE: u32 = 12;
-const MIDDLE_C: u32 = 60;
+const MIDDLE_C: u32 = 48;
 // A440
 const BASE_NOTE: f32 = 57.0;
 const BASE_FREQ: f32 = 440.0;
@@ -21,6 +21,8 @@ const BASE_FREQ: f32 = 440.0;
 struct Invocation {
     /// Octave range. 1 = middle octave only. 2 = middle and below. 3 = middle
     /// and above. etc. Max = 5, min = 1.
+    ///
+    /// Middle C is the one that's below the A that is 440Hz, and is C3.
     #[clap(short, default_value_t = 1)]
     octaves: u32,
     /// Number of notes to test.
@@ -34,7 +36,7 @@ struct Invocation {
 enum Guess { Wrong, WrongOctave, Perfect }
 
 fn full_note_name(note: u32) -> String {
-    let octave = note / NOTES_PER_OCTAVE - 2;
+    let octave = note / NOTES_PER_OCTAVE - 1;
     let note = note % NOTES_PER_OCTAVE;
     format!("{}{}", NOTE_NAMES[note as usize], octave)
 }
