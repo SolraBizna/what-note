@@ -36,7 +36,7 @@ struct Invocation {
 enum Guess { Wrong, WrongOctave, Perfect }
 
 fn full_note_name(note: u32) -> String {
-    let octave = note / NOTES_PER_OCTAVE - 1;
+    let octave = note / NOTES_PER_OCTAVE - 2;
     let note = note % NOTES_PER_OCTAVE;
     format!("{}{}", NOTE_NAMES[note as usize], octave)
 }
