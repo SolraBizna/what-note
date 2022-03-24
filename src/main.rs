@@ -97,6 +97,8 @@ fn main() {
     let octaves_above = (octaves+1)/2;
     let min_note = MIDDLE_C - octaves_below * NOTES_PER_OCTAVE;
     let max_note = MIDDLE_C + octaves_above * NOTES_PER_OCTAVE;
+    println!(" Lowest note we'll play: {}", full_note_name(min_note));
+    println!("Highest note we'll play: {}", full_note_name(max_note));
     let mut perfect_count = 0;
     let mut right_count = 0;
     let mut rng = thread_rng();
