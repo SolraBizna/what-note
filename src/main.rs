@@ -8,7 +8,7 @@ use rand::{Rng, thread_rng};
 use regex::Regex;
 
 const NOTE_NAMES: &[&str] = &["C","C#","D","D#","E",
-			      "F","F#","G","G#","A","A#","B"];
+                              "F","F#","G","G#","A","A#","B"];
 const NOTES_PER_OCTAVE: u32 = 12;
 const MIDDLE_C: u32 = 60;
 // A440
@@ -46,11 +46,11 @@ fn note_name(note: u32) -> String {
 
 fn play_note(note: u32) {
     let freq = BASE_FREQ * (2.0f32).powf((note as f32 - BASE_NOTE)
-					 / (NOTES_PER_OCTAVE as f32));
+                                         / (NOTES_PER_OCTAVE as f32));
     let _ = Command::new("play").arg("-q").arg("-n")
-	.arg("synth").arg("1").arg("sine").arg(&format!("{}", freq))
-	.arg("fade").arg("0.1").arg("1").arg("0.7").arg("vol").arg("0.6")
-	.spawn().expect("failed to start playback").wait();
+        .arg("synth").arg("1").arg("sine").arg(&format!("{}", freq))
+        .arg("fade").arg("0.1").arg("1").arg("0.7").arg("vol").arg("0.6")
+        .spawn().expect("failed to start playback").wait();
 }
 
 static VALID_NOTE_PATTERN: Lazy<Regex> = Lazy::new(|| {
@@ -62,31 +62,31 @@ fn guess_note(note: u32, note_name: &str, full_note_name: &str) -> Guess {
     let stdin = stdin();
     let mut stdin = stdin.lock();
     loop {
-	println!("Your guess?");
-	buf.clear();
-	match stdin.read_line(&mut buf) {
-	    Ok(_) => (),
-	    Err(_) => std::process::exit(0),
-	}
-	while buf.ends_with("\n") { buf.pop(); }
-	if VALID_NOTE_PATTERN.is_match(&buf) {
-	    if buf == full_note_name {
-		return Guess::Perfect
-	    }
-	    else if &buf[..buf.len()-1] == note_name {
-		return Guess::WrongOctave
-	    }
-	    else {
-		return Guess::Wrong
-	    }
-	}
-	else if buf == "?" {
-	    play_note(note);
-	}
-	else {
-	    println!("Please enter a note in MIDI notation (e.g. \"C#4\"), or \
-		      \"?\" to repeat the\nnote playback.");
-	}
+        println!("Your guess?");
+        buf.clear();
+        match stdin.read_line(&mut buf) {
+            Ok(_) => (),
+            Err(_) => std::process::exit(0),
+        }
+        while buf.ends_with("\n") { buf.pop(); }
+        if VALID_NOTE_PATTERN.is_match(&buf) {
+            if buf == full_note_name {
+                return Guess::Perfect
+            }
+            else if &buf[..buf.len()-1] == note_name {
+                return Guess::WrongOctave
+            }
+            else {
+                return Guess::Wrong
+            }
+        }
+        else if buf == "?" {
+            play_note(note);
+        }
+        else {
+            println!("Please enter a note in MIDI notation (e.g. \"C#4\"), or \
+                      \"?\" to repeat the\nnote playback.");
+        }
     }
 }
 
@@ -103,57 +103,57 @@ fn main() {
     let mut right_count = 0;
     let mut rng = thread_rng();
     for _ in 0 .. invocation.test_count {
-	let note = rng.gen_range(min_note ..= max_note);
-	println!("---");
-	play_note(note);
-	let note_name = note_name(note);
-	let full_note_name = full_note_name(note);
-	for rem_guesses in (0 .. invocation.attempt_limit).rev() {
-	    match guess_note(note, &note_name, &full_note_name) {
-		Guess::Wrong => {
-		    if rem_guesses > 1 {
-			println!("Try again ({} guesses left)", rem_guesses);
-		    }
-		    else if rem_guesses > 0 {
-			println!("Try again (last guess)");
-		    }
-		    else {
-			println!("Out of guesses.");
-			println!("The note was: {}", full_note_name);
-		    }
-		},
-		Guess::WrongOctave => {
-		    println!("You got the note right, but the octave wrong.");
-		    println!("The correct answer was: {}", full_note_name);
-		    right_count += 1;
-		    break
-		},
-		Guess::Perfect => {
-		    println!("Correct!");
-		    perfect_count += 1;
-		    break
-		},
-	    }
-	}
+        let note = rng.gen_range(min_note ..= max_note);
+        println!("---");
+        play_note(note);
+        let note_name = note_name(note);
+        let full_note_name = full_note_name(note);
+        for rem_guesses in (0 .. invocation.attempt_limit).rev() {
+            match guess_note(note, &note_name, &full_note_name) {
+                Guess::Wrong => {
+                    if rem_guesses > 1 {
+                        println!("Try again ({} guesses left)", rem_guesses);
+                    }
+                    else if rem_guesses > 0 {
+                        println!("Try again (last guess)");
+                    }
+                    else {
+                        println!("Out of guesses.");
+                        println!("The note was: {}", full_note_name);
+                    }
+                },
+                Guess::WrongOctave => {
+                    println!("You got the note right, but the octave wrong.");
+                    println!("The correct answer was: {}", full_note_name);
+                    right_count += 1;
+                    break
+                },
+                Guess::Perfect => {
+                    println!("Correct!");
+                    perfect_count += 1;
+                    break
+                },
+            }
+        }
     }
     println!("You got {}/{} correct. Half credit for {} wrong-octave guesses.",
-	     perfect_count, invocation.test_count, right_count);
+             perfect_count, invocation.test_count, right_count);
     let score = ((perfect_count * 2 + right_count) * 100 / invocation.test_count + 1) / 2;
     println!("Your final score: {}% = {}", score,
-	     match score {
-		 x if x >= 100 => "S",
-		 x if x >= 97 => "A+",
-		 x if x >= 94 => "A",
-		 x if x >= 90 => "A-",
-		 x if x >= 87 => "B+",
-		 x if x >= 84 => "B",
-		 x if x >= 80 => "B-",
-		 x if x >= 77 => "C+",
-		 x if x >= 74 => "C",
-		 x if x >= 70 => "C-",
-		 x if x >= 67 => "D+",
-		 x if x >= 64 => "D",
-		 x if x >= 60 => "D-",
-		 _ => "F",
-	     });
+             match score {
+                 x if x >= 100 => "S",
+                 x if x >= 97 => "A+",
+                 x if x >= 94 => "A",
+                 x if x >= 90 => "A-",
+                 x if x >= 87 => "B+",
+                 x if x >= 84 => "B",
+                 x if x >= 80 => "B-",
+                 x if x >= 77 => "C+",
+                 x if x >= 74 => "C",
+                 x if x >= 70 => "C-",
+                 x if x >= 67 => "D+",
+                 x if x >= 64 => "D",
+                 x if x >= 60 => "D-",
+                 _ => "F",
+             });
 }
