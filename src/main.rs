@@ -10,7 +10,7 @@ use regex::Regex;
 const NOTE_NAMES: &[&str] = &["C","C#","D","D#","E",
                               "F","F#","G","G#","A","A#","B"];
 const NOTES_PER_OCTAVE: u32 = 12;
-const MIDDLE_C: u32 = 48;
+const MIDDLE_C: u32 = 60;
 // A440
 const BASE_NOTE: f32 = 57.0;
 const BASE_FREQ: f32 = 440.0;
