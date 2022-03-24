@@ -8,7 +8,7 @@ use rand::{Rng, thread_rng};
 use regex::Regex;
 
 const NOTE_NAMES: &[&str] = &["C","C#","D","D#","E",
-			      "F","G#","G","G#","A","A#","B"];
+			      "F","F#","G","G#","A","A#","B"];
 const NOTES_PER_OCTAVE: u32 = 12;
 const MIDDLE_C: u32 = 60;
 // A440
