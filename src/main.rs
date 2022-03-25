@@ -46,6 +46,25 @@ fn note_name(note: u32) -> String {
     format!("{}", NOTE_NAMES[note as usize])
 }
 
+fn name_to_note(note_name: &str) -> u32 {
+  match note_name {
+    "C3" => 60,
+    "C#3" => 61,
+    "D3" => 62,
+    "D#3" => 63,
+    "E3" => 64,
+    "F3" => 65,
+    "F#3" => 66,
+    "G3" => 67,
+    "G#3" => 68,
+    "A3" => 69,
+    "A#3" => 70,
+    "B3" => 71,
+    "C4" => 72,
+    _ => 30,
+  }
+}
+
 fn play_note(note: u32) {
     let freq = BASE_FREQ * (2.0f32).powf((note as f32 - BASE_NOTE)
                                          / (NOTES_PER_OCTAVE as f32));
@@ -59,7 +78,7 @@ static VALID_NOTE_PATTERN: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"^([ACDFG]#?|[BE])?[2-6]$"#).unwrap()
 });
 
-fn guess_note(note: u32, note_name: &str, full_note_name: &str) -> Guess {
+fn guess_note(note: u32, note_name: &str, full_note_name: &str, compares: &mut u32, confirms: &mut u32, offness_total: &mut u32) -> Guess {
     let mut buf = String::new();
     let stdin = stdin();
     let mut stdin = stdin.lock();
@@ -82,12 +101,20 @@ fn guess_note(note: u32, note_name: &str, full_note_name: &str) -> Guess {
                 return Guess::Wrong
             }
         }
+        else if buf.starts_with("p") {
+            let to_play = name_to_note(&buf[1..]);
+            let offness = if note > to_play { note - to_play } else { to_play - note };
+            play_note(to_play);
+            *compares += 1;
+            *offness_total += offness;
+        }
         else if buf == "?" {
             play_note(note);
+            *confirms += 1;
         }
         else {
             println!("Please enter a note in MIDI notation (e.g. \"C#4\"), or \
-                      \"?\" to repeat the\nnote playback.");
+                      \"?\" to repeat the\nnote playback, or p<note> to play a note");
         }
     }
 }
@@ -99,6 +126,9 @@ fn main() {
     let octaves_above = (octaves+1)/2;
     let min_note = MIDDLE_C - octaves_below * NOTES_PER_OCTAVE;
     let max_note = MIDDLE_C + octaves_above * NOTES_PER_OCTAVE;
+    let mut compares = 0;
+    let mut confirms = 0;
+    let mut offness_total = 0;
     println!(" Lowest note we'll play: {}", full_note_name(min_note));
     println!("Highest note we'll play: {}", full_note_name(max_note));
     let mut perfect_count = 0;
@@ -111,7 +141,7 @@ fn main() {
         let note_name = note_name(note);
         let full_note_name = full_note_name(note);
         for rem_guesses in (0 .. invocation.attempt_limit).rev() {
-            match guess_note(note, &note_name, &full_note_name) {
+            match guess_note(note, &note_name, &full_note_name, &mut compares, &mut confirms, &mut offness_total) {
                 Guess::Wrong => {
                     if rem_guesses > 1 {
                         println!("Try again ({} guesses left)", rem_guesses);
@@ -141,7 +171,7 @@ fn main() {
     println!("You got {}/{} correct. Half credit for {} wrong-octave guesses.",
              perfect_count, invocation.test_count, right_count);
     let score = ((perfect_count * 2 + right_count) * 100 / invocation.test_count + 1) / 2;
-    println!("Your final score: {}% = {}", score,
+    println!("Your final score: {}% = {}, {} compares, {} confirms, offness total {}", score,
              match score {
                  x if x >= 100 => "S",
                  x if x >= 97 => "A+",
@@ -157,5 +187,5 @@ fn main() {
                  x if x >= 64 => "D",
                  x if x >= 60 => "D-",
                  _ => "F",
-             });
+             }, compares, confirms, offness_total);
 }
