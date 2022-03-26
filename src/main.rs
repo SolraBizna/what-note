@@ -11,9 +11,14 @@ const NOTE_NAMES: &[&str] = &["C","C#","D","D#","E",
                               "F","F#","G","G#","A","A#","B"];
 const NOTES_PER_OCTAVE: u32 = 12;
 const MIDDLE_C: u32 = 60;
+const OCTAVE_OFFSET: u32 = 2;
 // A440
 const BASE_NOTE: f32 = 69.0;
 const BASE_FREQ: f32 = 440.0;
+
+static VALID_NOTE_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r#"^([ACDFG]#?|[BE])(-?[0-9]+)$"#).unwrap()
+});
 
 #[derive(Parser,Debug)]
 #[clap(author = "Solra Bizna <solra@bizna.name>", version,
@@ -36,7 +41,7 @@ struct Invocation {
 enum Guess { Wrong, WrongOctave, Perfect }
 
 fn full_note_name(note: u32) -> String {
-    let octave = note / NOTES_PER_OCTAVE - 2;
+    let octave = note / NOTES_PER_OCTAVE - OCTAVE_OFFSET;
     let note = note % NOTES_PER_OCTAVE;
     format!("{}{}", NOTE_NAMES[note as usize], octave)
 }
@@ -46,23 +51,29 @@ fn note_name(note: u32) -> String {
     format!("{}", NOTE_NAMES[note as usize])
 }
 
-fn name_to_note(note_name: &str) -> u32 {
-  match note_name {
-    "C3" => 60,
-    "C#3" => 61,
-    "D3" => 62,
-    "D#3" => 63,
-    "E3" => 64,
-    "F3" => 65,
-    "F#3" => 66,
-    "G3" => 67,
-    "G#3" => 68,
-    "A3" => 69,
-    "A#3" => 70,
-    "B3" => 71,
-    "C4" => 72,
-    _ => 30,
-  }
+fn name_to_note(note_name: &str) -> Option<u32> {
+    match VALID_NOTE_PATTERN.captures(note_name) {
+        None => None,
+        Some(captures) => {
+            let note_name = captures.get(1).unwrap();
+            let octave: i16 = captures.get(2).unwrap().as_str().parse().unwrap();
+            let mut note = None;
+            for (index, name) in NOTE_NAMES.iter().enumerate() {
+                if &note_name.as_str() == name {
+                    note = Some(index);
+                    break
+                }
+            }
+            let note = match note {
+                Some(x) => x,
+                None => return None, // should not happen
+            };
+            let full_result = (octave as i64 + OCTAVE_OFFSET as i64)
+                * NOTES_PER_OCTAVE as i64
+                + note as i64;
+            full_result.try_into().ok()
+        },
+    }
 }
 
 fn play_note(note: u32) {
@@ -73,10 +84,6 @@ fn play_note(note: u32) {
         .arg("fade").arg("0.1").arg("1").arg("0.7").arg("vol").arg("0.6")
         .spawn().expect("failed to start playback").wait();
 }
-
-static VALID_NOTE_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"^([ACDFG]#?|[BE])?[2-6]$"#).unwrap()
-});
 
 fn guess_note(note: u32, note_name: &str, full_note_name: &str, compares: &mut u32, confirms: &mut u32, offness_total: &mut u32) -> Guess {
     let mut buf = String::new();
@@ -103,10 +110,17 @@ fn guess_note(note: u32, note_name: &str, full_note_name: &str, compares: &mut u
         }
         else if buf.starts_with("p") {
             let to_play = name_to_note(&buf[1..]);
-            let offness = if note > to_play { note - to_play } else { to_play - note };
-            play_note(to_play);
-            *compares += 1;
-            *offness_total += offness;
+            match to_play {
+                None => {
+                    println!("Invalid note for playback");
+                },
+                Some(to_play) => {
+                    let offness = if note > to_play { note - to_play } else { to_play - note };
+                    play_note(to_play);
+                    *compares += 1;
+                    *offness_total += offness;
+                }
+            }
         }
         else if buf == "?" {
             play_note(note);
@@ -114,7 +128,8 @@ fn guess_note(note: u32, note_name: &str, full_note_name: &str, compares: &mut u
         }
         else {
             println!("Please enter a note in MIDI notation (e.g. \"C#4\"), or \
-                      \"?\" to repeat the\nnote playback, or p<note> to play a note");
+                            \"?\" to repeat the\nnote playback, or p<note> \
+                            to play a note (cheater!)");
         }
     }
 }
